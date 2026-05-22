@@ -1,6 +1,6 @@
 ---
 name: at5-frontend-stack
-description: Master guide and orchestrator for the AT5 frontend stack. Use this skill when setting up or working on any frontend project with Vite 8+, React 19, React Compiler, Tailwind CSS v4, Base UI (@base-ui/react), ofetch, NiceModal, Zod, or React Hook Form. Always trigger when the user asks about frontend architecture, project structure, responsive layout, accessibility (a11y), data fetching patterns, monorepo setup, or iOS/Safari compatibility. Also activates the specialized sub-skills: at5-ui-components, at5-nicemodal, at5-radix-colors-tailwind, and at5-toasts.
+description: "Master guide and orchestrator for the AT5 frontend stack. Use this skill when setting up or working on any frontend project with Vite 8+, React 19, React Compiler, Tailwind CSS v4, Base UI, ofetch, NiceModal, Zod, or React Hook Form. Always trigger when the user asks about frontend architecture, project structure, responsive layout, accessibility, data fetching patterns, monorepo setup, or iOS/Safari compatibility. Also activates the sub-skills: at5-ui-components, at5-nicemodal, at5-radix-colors-tailwind, and at5-toasts."
 ---
 
 # at5-frontend-stack — Master Guide and Frontend Orchestrator
