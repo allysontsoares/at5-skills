@@ -1,358 +1,198 @@
 ---
 name: at5-toasts
-description: Toast and notification system for AT5 projects using Base UI primitives. Use when implementing toasts, snackbars, success/error messages, loading indicators, async promise feedback, or contextually anchored alerts. Always trigger on keywords like toast, notification, toastManager, snackbar, loading state, success message, error message, promise feedback, AnchoredToastProvider, or Base UI toast.
+description: Toast and notification system for AT5 projects using Base UI primitives. Documents the native Base UI Toast Manager (toastManager, anchoredToastManager), the custom Toasts and AnchoredToasts viewport and positioner structures, custom animations, and application bootstrap wrapping in main.tsx. Always trigger on keywords like toast, notification, toastManager, anchoredToastManager, toastProvider, AnchoredToastProvider, Base UI toast, or toast.tsx.
 ---
 
 # at5-toasts — Notification and Toast Management with Base UI
 
-This autonomous skill documents the **Notification and Toast Management** architecture in the **AT5** ecosystem, integrated with the **Base UI** headless engine (`@base-ui/react`). It presents the complete real code for sync, async, and anchored toast providers (`ToastProvider`, `AnchoredToastProvider`), the imperative `toastManager` with Promise/loader support, and premium animations.
+This autonomous skill documents the **Notification and Toast Management** architecture in the **AT5** ecosystem, integrated with the **Base UI** headless engine (`@base-ui/react/toast`). It teaches the complete production architecture, the composition of providers in `main.tsx`, and how to use the imperative managers (`toastManager`, `anchoredToastManager`) with support for sync alerts, async promises, and contextual anchored positioning.
+
+> [!IMPORTANT]
+> **No Sonner or Custom Stores**: Under no circumstances should custom state stores (`toast-store.ts` / Pub-Sub) or external libraries like `sonner` be introduced. The system relies 100% on the native `@base-ui/react/toast` managers and components.
 
 ---
 
 ## 🛠️ 1. AT5 Notification Philosophy
 
-AT5 adopts a clean, user-focused interface with fluid micro-animations. System toasts avoid opinionated heavy libraries, using the accessible headless primitives from **Base UI**, styled with **Radix Colors** tokens under **Tailwind v4.0**.
+The AT5 toast system separates concerns into a headless state engine, a visual markup structure, and an imperative dispatch API.
 
-### Notification UX Principles:
-1. **Non-intrusive**: Normal toasts appear in screen corners and disappear after `4000ms`.
-2. **Clear Transient States**: Native support for `loading` status, smoothly transitioning to `success` or `error` via Promises.
-3. **Contextual Anchoring**: The `anchoredToastManager` allows dispatching contextual alerts anchored to specific form elements or buttons using CSS Anchor Positioning.
-4. **No JSX in Business Logic**: Developers dispatch notifications 100% imperatively from actions, queries, or services.
+1. **State Management**: Governed natively by `@base-ui/react/toast`'s `Toast.createToastManager()`. This handles queues, limits, swipe-to-dismiss, and timer schedules.
+2. **Visual Markups**: Configured in a single file `packages/ui/src/components/toast.tsx` separating standard floating toasts (`Toasts`) from element-anchored tooltips/cards (`AnchoredToasts`).
+3. **No JSX in Logic**: Developers dispatch notifications imperatively via `toastManager` or `anchoredToastManager` without wrapping page triggers in local JSX providers.
+4. **Coexistence of Contexts**: The application mounts both providers in a nested structure at the root level, offering global floating feedback and context-anchored elements at the same time.
 
 ---
 
-## 🏗️ 2. Imperative Infrastructure Code (`toast-store.ts`)
+## 📂 2. Reference & Codebase Implementation
 
-To allow imperative calls from any TypeScript file in the project (without needing local React Contexts), we create a subscription-based micro-store.
+The absolute source of truth for the Toast component implementation resides in the `references/` folder. AIs and developers must reference this code instead of implementing components ad-hoc:
 
-Create this file at `apps/web/src/components/ui/toast/toast-store.ts` (or equivalent):
+* **Toast Component Reference**: [toast_implementation.md](file:///home/allysonsoares/at5-skills/at5-toasts/references/toast_implementation.md)
+* **Codebase File Location**: `/packages/ui/src/components/toast.tsx`
 
-```typescript
-export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
+---
 
-export interface ToastData {
-  id: string;
-  message: string;
-  type: ToastType;
-  duration?: number;
-}
+## 🏗️ 3. Initialization & Bootstrap Context
 
-type ToastListener = (toasts: ToastData[]) => void;
+To provide both floating system alerts and contextual anchored tooltips concurrently, providers must be nested together at the root entrypoint of the application.
 
-class ToastStore {
-  private toasts: ToastData[] = [];
-  private listeners: Set<ToastListener> = new Set();
+In the real entrypoint `apps/web/src/main.tsx`, the bootstrap structure is as follows:
 
-  subscribe(listener: ToastListener) {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
+```tsx
+import { AnchoredToastProvider, ToastProvider } from '@manager/ui';
 
-  private emit() {
-    this.listeners.forEach((listener) => listener([...this.toasts]));
-  }
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ToastProvider position="bottom-center">
+      <AnchoredToastProvider>
+        {/* React Router & Application Content */}
+        <App />
+      </AnchoredToastProvider>
+    </ToastProvider>
+  </React.StrictMode>
+);
+```
 
-  show(message: string, type: ToastType = 'info', duration = 4000): string {
-    const id = Math.random().toString(36).substring(2, 9);
-    this.toasts.push({ id, message, type, duration });
-    this.emit();
-    return id;
-  }
+### Supported Positions (`ToastProvider`):
+* `top-left` | `top-center` | `top-right`
+* `bottom-left` | `bottom-center` | `bottom-right` (Default)
 
-  update(id: string, updates: Partial<Omit<ToastData, 'id'>>) {
-    this.toasts = this.toasts.map((t) => (t.id === id ? { ...t, ...updates } : t));
-    this.emit();
-  }
+---
 
-  dismiss(id: string) {
-    this.toasts = this.toasts.filter((t) => t.id !== id);
-    this.emit();
-  }
+## 📝 4. Imperative API & Usage Examples
 
-  clear() {
-    this.toasts = [];
-    this.emit();
-  }
-}
+### 4.1 Basic Floating Toasts (`toastManager`)
+Import `toastManager` from `@manager/ui` (or path alias `@/components/ui/toast`) and trigger:
 
-export const toastStore = new ToastStore();
+```tsx
+import { toastManager } from '@manager/ui';
 
-/**
- * toastManager - Imperative API exposed to the entire application
- */
-export const toastManager = {
-  success: (msg: string, duration?: number) => toastStore.show(msg, 'success', duration),
-  error: (msg: string, duration?: number) => toastStore.show(msg, 'error', duration),
-  warning: (msg: string, duration?: number) => toastStore.show(msg, 'warning', duration),
-  info: (msg: string, duration?: number) => toastStore.show(msg, 'info', duration),
-  loading: (msg: string) => toastStore.show(msg, 'loading', 999999),
-  dismiss: (id: string) => toastStore.dismiss(id),
+// Simple Alert
+toastManager.add({
+  title: 'Operação concluída',
+});
 
-  // Automatically resolves promises by transitioning the toast from Loading to Success or Error
-  promise: <T>(
-    promise: Promise<T>,
-    messages: { loading: string; success: string; error: string },
-    duration = 4000
-  ): Promise<T> => {
-    const id = toastStore.show(messages.loading, 'loading', 999999);
-    return promise
-      .then((res) => {
-        toastStore.update(id, { message: messages.success, type: 'success', duration });
-        setTimeout(() => toastStore.dismiss(id), duration);
-        return res;
-      })
-      .catch((err) => {
-        toastStore.update(id, { message: messages.error, type: 'error', duration });
-        setTimeout(() => toastStore.dismiss(id), duration);
-        throw err;
-      });
+// Rich Alert
+toastManager.add({
+  title: 'Laboratório salvo',
+  description: 'Os dados foram atualizados com sucesso.',
+  type: 'success', // 'success' | 'error' | 'warning' | 'info' | 'loading'
+});
+```
+
+### 4.2 Async Promise-Based Alerts (Loaders)
+Highly recommended for form submissions or API mutations. The toast transitions states automatically from loading to success/error based on the promise resolution:
+
+```tsx
+import { toastManager } from '@manager/ui';
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const promise = saveMutation.mutateAsync(formData);
+
+  toastManager.promise(promise, {
+    loading: { 
+      title: 'Salvando...',
+      description: 'Aguarde enquanto os dados são enviados.' 
+    },
+    success: () => ({ 
+      title: 'Salvo com sucesso!',
+      description: 'Registro criado com sucesso.'
+    }),
+    error: (error) => ({
+      title: 'Erro ao salvar',
+      description: error instanceof Error ? error.message : 'Erro inesperado.'
+    }),
+  });
+
+  try {
+    await promise;
+    onSuccess();
+  } catch {
+    // Silent catch (toast already handles the error display)
   }
 };
 ```
 
----
-
-## 🏗️ 3. Real `ToastProvider` Component Code
-
-This is the visual provider (`apps/web/src/components/ui/toast/toast-provider.tsx` or equivalent) that consumes the imperative store and renders toasts using the accessible **Base UI** primitives.
+### 4.3 Deduplicated Toasts (Upsert)
+To avoid screen clutter (e.g. during background polling or status syncing), pass a stable string `id`. This updates the existing toast and restarts its auto-dismiss timer instead of spawning a new one:
 
 ```tsx
-import { useEffect, useState } from 'react';
-import * as Toast from '@base-ui/react/toast';
-import { toastStore, type ToastData } from './toast-store';
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  InfoCircle,
-  Loading02,
-  XClose,
-} from '@untitled-ui/icons-react';
+// Spawns loading status
+toastManager.add({
+  id: 'sync-status',
+  title: 'Sincronizando dados...',
+  type: 'loading',
+});
 
-export function ToastProvider() {
-  const [toasts, setToasts] = useState<ToastData[]>([]);
-
-  useEffect(() => {
-    return toastStore.subscribe((updatedToasts) => {
-      setToasts(updatedToasts);
-    });
-  }, []);
-
-  return (
-    <Toast.Provider swipeDirection="right">
-      {/* Toast display container (bottom-right corner) */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
-        {toasts.map((toast) => (
-          <ToastRoot key={toast.id} toast={toast} />
-        ))}
-      </div>
-    </Toast.Provider>
-  );
-}
-
-interface ToastRootProps {
-  toast: ToastData;
-}
-
-function ToastRoot({ toast }: ToastRootProps) {
-  const { id, message, type, duration } = toast;
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      toastStore.dismiss(id);
-    }
-  };
-
-  const icons = {
-    success: <CheckCircle className="size-5 text-green-9" />,
-    error: <XCircle className="size-5 text-red-9" />,
-    warning: <AlertTriangle className="size-5 text-amber-9" />,
-    info: <InfoCircle className="size-5 text-brand-9" />,
-    loading: <Loading02 className="size-5 text-slate-11 animate-spin" />,
-  };
-
-  const bgClasses = {
-    success: 'bg-slate-2 border-green-6 text-slate-12',
-    error: 'bg-slate-2 border-red-6 text-slate-12',
-    warning: 'bg-slate-2 border-amber-6 text-slate-12',
-    info: 'bg-slate-2 border-brand-6 text-slate-12',
-    loading: 'bg-slate-2 border-slate-6 text-slate-12',
-  };
-
-  return (
-    <Toast.Root
-      open={true}
-      onOpenChange={handleOpenChange}
-      autoFocus={false}
-      className={`pointer-events-auto flex items-start gap-3 w-full p-4 rounded-lg border shadow-lg transition-all duration-300 transform animate-in slide-in-from-right-10 fade-in-20 ${bgClasses[type]}`}
-    >
-      <div className="shrink-0 mt-0.5">{icons[type]}</div>
-
-      <div className="flex-1 text-sm font-medium leading-tight">
-        <Toast.Description>{message}</Toast.Description>
-      </div>
-
-      {type !== 'loading' && (
-        <Toast.Close className="shrink-0 text-slate-11 hover:text-slate-12 transition-colors p-0.5 rounded hover:bg-slate-4">
-          <XClose className="size-4" />
-        </Toast.Close>
-      )}
-    </Toast.Root>
-  );
-}
+// Later, updates the same toast in place
+toastManager.add({
+  id: 'sync-status',
+  title: 'Sincronização concluída!',
+  type: 'success',
+});
 ```
 
----
-
-## 🏗️ 4. Real `AnchoredToastProvider` Code (Anchored Notifications)
-
-Unlike traditional floating toasts, anchored toasts are ideal for persistent alerts focused on screen elements (e.g., validation warning near a failed button or input). The provider below dynamically manages virtual or real anchors.
-
-Create the file at `apps/web/src/components/ui/toast/anchored-toast.tsx` or equivalent:
-
-> [!WARNING]
-> **Browser Compatibility**: The `AnchoredToastProvider` uses the [CSS Anchor Positioning API](https://caniuse.com/css-anchor-positioning) (`anchor-name`, `position-anchor`). Available only in **Chrome 125+ / Edge 125+**. Firefox and Safari do not yet support it. Use as **progressive enhancement** — the toast still appears, but may not position correctly on unsupported browsers.
+### 4.4 Element-Anchored Toasts (`anchoredToastManager`)
+Ideal for contextual notifications like copying text to clipboards or quick inline validations. Instead of absolute CSS Anchor Positioning (which lacks broad browser support), this uses the standard **Base UI `Toast.Positioner`** under the hood:
 
 ```tsx
-import { type ReactNode, createContext, useContext, useState } from 'react';
-import * as Toast from '@base-ui/react/toast';
+import { useRef } from 'react';
+import { anchoredToastManager } from '@manager/ui';
 
-interface AnchoredToastContextProps {
-  showAnchored: (anchorId: string, message: string, duration?: number) => void;
-  hideAnchored: (anchorId: string) => void;
-}
+export function CopyButton() {
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-const AnchoredToastContext = createContext<AnchoredToastContextProps | undefined>(undefined);
-
-export function AnchoredToastProvider({ children }: { children: ReactNode }) {
-  const [activeToasts, setActiveToasts] = useState<Record<string, { message: string }>>({});
-
-  const showAnchored = (anchorId: string, message: string, duration = 3000) => {
-    setActiveToasts((prev) => ({ ...prev, [anchorId]: { message } }));
-    if (duration !== Infinity) {
-      setTimeout(() => {
-        hideAnchored(anchorId);
-      }, duration);
-    }
-  };
-
-  const hideAnchored = (anchorId: string) => {
-    setActiveToasts((prev) => {
-      const copy = { ...prev };
-      delete copy[anchorId];
-      return copy;
+  const handleCopy = () => {
+    anchoredToastManager.add({
+      title: 'Copiado!',
+      positionerProps: {
+        anchor: buttonRef.current,
+        sideOffset: 6,
+      },
     });
   };
 
-  return (
-    <AnchoredToastContext.Provider value={{ showAnchored, hideAnchored }}>
-      <Toast.Provider>
-        {children}
-
-        {/* Dynamically renders anchored portals */}
-        {Object.entries(activeToasts).map(([anchorId, { message }]) => (
-          <Toast.Root
-            key={anchorId}
-            open={true}
-            onOpenChange={(open) => !open && hideAnchored(anchorId)}
-            className="z-50 bg-slate-12 text-slate-1 border border-slate-11 px-3 py-1.5 rounded-md text-xs font-semibold shadow-md max-w-xs animate-in zoom-in-95 fade-in-10"
-            // CSS Anchor Positioning — Chrome 125+ / Edge 125+
-            style={{
-              position: 'absolute',
-              // @ts-expect-error — experimental CSS property not yet typed in TS
-              positionAnchor: `--${anchorId}`,
-              top: 'anchor(bottom)',
-              left: 'anchor(center)',
-              transform: 'translateX(-50%) translateY(4px)',
-            }}
-          >
-            <Toast.Description>{message}</Toast.Description>
-          </Toast.Root>
-        ))}
-      </Toast.Provider>
-    </AnchoredToastContext.Provider>
-  );
+  return <button ref={buttonRef} onClick={handleCopy}>Copiar Link</button>;
 }
+```
 
-export function useAnchoredToast() {
-  const context = useContext(AnchoredToastContext);
-  if (!context) {
-    throw new Error('useAnchoredToast must be used inside an AnchoredToastProvider');
-  }
-  return context;
-}
+#### Compact Tooltip Style
+To render a compact, border-only small notification without a description (perfect for copy alerts):
+
+```tsx
+anchoredToastManager.add({
+  title: 'Copiado!',
+  positionerProps: {
+    anchor: buttonRef.current,
+    sideOffset: 6,
+  },
+  data: {
+    tooltipStyle: true, // Triggers compact tooltip styling in toast.tsx
+  },
+});
 ```
 
 ---
 
-## 📝 5. Practical Usage Examples
+## 🎨 5. Animations, Stacking & Transitions
 
-### 5.1 Simple Sync Toasts
-```tsx
-import { toastManager } from '@/components/ui/toast/toast-store';
+The AT5 toast system utilizes a state-of-the-art visual stacking and motion model styled with **Tailwind CSS v4.0** tokens:
 
-function handleSaveSettings() {
-  try {
-    // Execute action...
-    toastManager.success('Settings saved successfully!');
-  } catch (error) {
-    toastManager.error('Failed to save settings.');
-  }
-}
-```
-
-### 5.2 Async Promise-Based Toasts (Loaders)
-```tsx
-import { toastManager } from '@/components/ui/toast/toast-store';
-import { apiClient } from '@/lib/api-client';
-
-async function handleImportBilling() {
-  const importPromise = apiClient.post('/billing/import', { year: 2026 });
-
-  // Manages loading, success and error in a single line
-  await toastManager.promise(importPromise, {
-    loading: 'Processing billing file...',
-    success: 'Billing imported and processed successfully!',
-    error: 'Critical error processing the file. Check the logs.',
-  });
-}
-```
-
-### 5.3 Anchored Notifications
-For anchoring to work, the button or input must receive a custom CSS `anchor-name` property.
-
-```tsx
-import { useAnchoredToast } from '@/components/ui/toast/anchored-toast';
-
-export function ExportButton() {
-  const { showAnchored } = useAnchoredToast();
-
-  const handleExport = () => {
-    showAnchored('export-btn', 'Export started in the background!', 3000);
-  };
-
-  return (
-    <button
-      id="export-btn"
-      onClick={handleExport}
-      className="bg-brand-9 text-white px-4 py-2 rounded-md hover:bg-brand-10"
-      // Defines the anchor for CSS to position the anchored toast — Chrome 125+
-      // @ts-expect-error — experimental CSS property
-      style={{ anchorName: '--export-btn' }}
-    >
-      Export Data
-    </button>
-  );
-}
-```
+1. **Stacking Index (`--toast-index`)**: Toasts stack vertically. Active toasts are layered behind the frontmost toast using `z-[calc(9999-var(--toast-index))]`.
+2. **Dynamic Height & Transitions**: Utilizes smooth transition transforms `[transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s]`.
+3. **Update Replay Classes**: In case an active toast gets updated (e.g. `loading` -> `success`), the component recalculates `updateKey` and triggers active vibration animations (`animate-toast-error-even`, `animate-toast-success-odd`, etc.) to grab user attention.
+4. **Direction-Aware Swipe**: Leverages Base UI's swipe gestures, applying custom sliding direction variables (`data-[swipe-direction]`) so swipe-to-dismiss moves the card elegantly off-screen in the correct direction.
 
 ---
 
-## ⚙️ 6. How to Validate and Audit
+## ⚙️ 6. Validation & Audit Checklist
 
-Whenever the AI or developer makes changes to the Toast system, audit the following:
-1. **ARIA Accessibility**: Ensure toasts have correct accessibility roles (using `Toast.Root` and `Toast.Description` primitives from Base UI).
-2. **Keyboard Focus**: Ensure toast appearance does **not** steal keyboard focus from the user (`autoFocus={false}` property active).
-3. **Responsive Behavior**: Verify the Toast panel adjusts to screen size and stacks correctly on mobile devices.
+When working with or reviewing the Toast system, perform the following validation checks:
+
+* [ ] **No Duplicated Providers**: Verify that `ToastProvider` and `AnchoredToastProvider` are loaded **only once** at the root layout/main entrypoint.
+* [ ] **Correct Manager Reference**: Never use standard `toastManager` to display anchored toasts. Standard uses screen portaling; `anchoredToastManager` must be used for anchoring to specific elements.
+* [ ] **Aria Descriptors**: Verify `Toast.Title` and `Toast.Description` are enclosed inside `Toast.Content` inside the `toast.tsx` component to keep the screen reader mapping intact.
+* [ ] **Focus Management**: Standard toasts must have `autoFocus={false}` (configured in the provider or hook) to prevent breaking keyboard navigation flows.
+* [ ] **Positioner Refs**: Ensure `anchoredToastManager` calls provide a valid `positionerProps.anchor` pointing to a mounted DOM ref or element, otherwise the toast will not be rendered.
