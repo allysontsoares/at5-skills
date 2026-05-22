@@ -158,9 +158,9 @@ All components and screens must be fully accessible by default:
 To implement any functionality in AT5 with precision, the agent or developer **MUST activate and use** the following autonomous and independent skills located in **`~/.agents/skills/`** based on the scope of work:
 
 1. 📂 **`at5-ui-components`**: Contains the complete catalog of pre-styled React components and the real `/packages/ui` code for rapid creation of accessible interfaces using the Base UI **Slot Pattern** (`render` prop instead of `asChild`).
-2. 📂 **`at5-nicemodal`**: Teaches how to orchestrate complex forms and dialogs using the robust `createFormDialog` helper (with sidebar and mobile tab support) and `createAlertDialog` without manual wrappers.
+2. 📂 **`at5-modals`**: Teaches how to orchestrate complex forms and dialogs using the robust `createFormDialog` helper (with sidebar and mobile tab support) and `createAlertDialog` without manual wrappers. Uses a `Modal` facade (`modal-provider.tsx`) so `@ebay/nice-modal-react` is never imported directly in project files.
 3. 📂 **`at5-radix-colors-tailwind`**: Guide for strict manipulation of color tokens based on Radix Colors, dark mode via `.dark` class, and exact step mapping from 1 to 12 in `index.css`.
 4. 📂 **`at5-toasts`**: Configuration and dispatch of async/sync notifications and native Promise handling with `toastManager` and `anchoredToastManager`.
 
 > [!TIP]
-> If you need to build UI components or manage dialogs right now, immediately call `~/.agents/skills/at5-ui-components/SKILL.md` or `~/.agents/skills/at5-nicemodal/SKILL.md`.
+> If you need to build UI components or manage dialogs right now, immediately call `~/.agents/skills/at5-ui-components/SKILL.md` or `~/.agents/skills/at5-modals/SKILL.md`.
