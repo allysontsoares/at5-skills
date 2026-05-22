@@ -3,34 +3,34 @@ name: at5-frontend-stack
 description: Master guide and orchestrator for the AT5 frontend stack. Use this skill when setting up or working on any frontend project with Vite 8+, React 19, React Compiler, Tailwind CSS v4, Base UI (@base-ui/react), ofetch, NiceModal, Zod, or React Hook Form. Always trigger when the user asks about frontend architecture, project structure, responsive layout, accessibility (a11y), data fetching patterns, monorepo setup, or iOS/Safari compatibility. Also activates the specialized sub-skills: at5-ui-components, at5-nicemodal, at5-radix-colors-tailwind, and at5-toasts.
 ---
 
-# at5-frontend-stack — Guia Mestre e Orquestrador Frontend da AT5
+# at5-frontend-stack — Master Guide and Frontend Orchestrator
 
-Este é o guia definitivo de arquitetura, padrões e engenharia de software para o desenvolvimento frontend no ecossistema **AT5**. Ele atua como orquestrador principal e "fonte da verdade" para guiar agentes de IA e desenvolvedores a criarem códigos consistentes, modernos, acessíveis e altamente otimizados.
+This is the definitive architecture, patterns, and software engineering guide for frontend development in the **AT5** ecosystem. It acts as the primary orchestrator and single source of truth to guide AI agents and developers in creating consistent, modern, accessible, and highly optimized code.
 
 ---
 
-## 🚀 1. Stack Tecnológica Core
+## 🚀 1. Core Technology Stack
 
-Qualquer projeto novo ou existente que siga a arquitetura AT5 deve adotar estritamente as seguintes tecnologias e configurações de última geração:
+Any new or existing project following the AT5 architecture must strictly adopt the following cutting-edge technologies and configurations:
 
-1. **Vite 8+**: Motor de build ultra-rápido para desenvolvimento local e bundling de produção.
-2. **React 19**: Versão estável do React que introduz suporte nativo a Actions, `use` API e melhorias significativas de performance.
-3. **React Compiler**: O compilador automático de React. **Requer `@vitejs/plugin-react` (Babel) — incompatível com a variante SWC**. Configure no `vite.config.ts` via `babel-plugin-react-compiler`:
+1. **Vite 8+**: Ultra-fast build engine for local development and production bundling.
+2. **React 19**: Stable React version introducing native support for Actions, the `use` API, and significant performance improvements.
+3. **React Compiler**: The automatic React compiler. **Requires `@vitejs/plugin-react` (Babel) — incompatible with the SWC variant**. Configure in `vite.config.ts` via `babel-plugin-react-compiler`:
    ```ts
    import react from '@vitejs/plugin-react';
    // vite.config.ts
    plugins: [react({ babel: { plugins: [['babel-plugin-react-compiler']] } })]
    ```
-   Dispensa a necessidade de memoização manual excessiva com `useMemo` e `useCallback` na grande maioria dos casos.
-4. **Tailwind CSS v4.0**: A nova era do Tailwind baseada em motor nativo em Rust, sem arquivo `tailwind.config.js` redundante, onde todo o setup é feito diretamente no CSS de entrada (`index.css`) via variáveis CSS nativas.
-5. **Base UI (`@base-ui/react`)**: Biblioteca de componentes não estilizados (headless) de altíssima acessibilidade, focada em performance e conformidade com os padrões da W3C.
-6. **Zod**: Biblioteca de validação de schemas TypeScript-first, usada como única fonte de verdade para contratos de API e formulários.
-7. **React Hook Form**: Orquestrador de formulários leve e baseado em refs, integrado com validação Zod.
-8. **ofetch**: Cliente HTTP ultra-leve, resiliente, compatível com Node/Browser, que substitui o Axios com melhor suporte a timeouts, retry e tratamento nativo de tokens.
-9. **NiceModal**: Gerenciador declarativo de modais/diálogos baseado em estado do React que permite criar e abrir diálogos sem poluir a árvore JSX local. **Requer** envolver o `<App>` com `<NiceModal.Provider>`:
+   Eliminates the need for excessive manual memoization with `useMemo` and `useCallback` in most cases.
+4. **Tailwind CSS v4.0**: The new era of Tailwind powered by a native Rust engine, with no redundant `tailwind.config.js` required — all setup is done directly in the CSS entry file (`index.css`) via native CSS variables.
+5. **Base UI (`@base-ui/react`)**: Unstyled (headless) component library with high accessibility focus, optimized for performance and W3C standards compliance.
+6. **Zod**: TypeScript-first schema validation library, used as the single source of truth for API contracts and forms.
+7. **React Hook Form**: Lightweight, ref-based form orchestrator, integrated with Zod validation.
+8. **ofetch**: Ultra-lightweight, resilient HTTP client compatible with Node/Browser, replacing Axios with better support for timeouts, retry, and native token handling.
+9. **NiceModal**: Declarative React state-based modal/dialog manager that allows creating and opening dialogs without polluting the local JSX tree. **Requires** wrapping `<App>` with `<NiceModal.Provider>`:
    ```tsx
    import NiceModal from '@ebay/nice-modal-react';
-   // main.tsx ou App.tsx raiz
+   // main.tsx or root App.tsx
    <NiceModal.Provider>
      <App />
    </NiceModal.Provider>
@@ -38,51 +38,51 @@ Qualquer projeto novo ou existente que siga a arquitetura AT5 deve adotar estrit
 
 ---
 
-## 📦 2. Estrutura do Monorepo e Contratos
+## 📦 2. Monorepo Structure and Contracts
 
-A AT5 opera sob um monorepo organizado com workspaces `pnpm`. Manter a separação de responsabilidades (Separation of Concerns) e a filosofia DRY (Don't Repeat Yourself) é obrigatório:
+AT5 operates under a monorepo organized with `pnpm` workspaces. Maintaining Separation of Concerns and the DRY (Don't Repeat Yourself) philosophy is mandatory:
 
 ```text
 /
 ├── apps/
-│   ├── api/            # API backend baseada em Express
-│   └── web/            # Aplicação web principal (Vite + React)
+│   ├── api/            # Express-based backend API
+│   └── web/            # Main web application (Vite + React)
 ├── packages/
-│   ├── types/          # Fonte da verdade de tipos e schemas Zod compartilhados
+│   ├── types/          # Source of truth for shared types and Zod schemas
 │   ├── ui/             # Design System (Base UI + Tailwind)
-│   ├── hooks/          # Hooks customizados e utilitários de estado/media-queries
-│   └── config/         # Configurações globais (Biome, tsconfig, etc.)
+│   ├── hooks/          # Custom hooks and state/media-query utilities
+│   └── config/         # Global configurations (Biome, tsconfig, etc.)
 ```
 
-### Contratos DRY com `/packages/types`
-Nunca duplique contratos ou interfaces.
-- **Zod Schemas**: Todos os contratos de requisição e resposta de API devem ser declarados como schemas Zod em `/packages/types`.
-- **Type Inference**: O frontend deve inferir os tipos TypeScript diretamente desses schemas usando `z.infer<typeof Schema>` para garantir segurança ponta a ponta e zero divergência de tipos.
+### DRY Contracts with `/packages/types`
+Never duplicate contracts or interfaces.
+- **Zod Schemas**: All API request/response contracts must be declared as Zod schemas in `/packages/types`.
+- **Type Inference**: The frontend must infer TypeScript types directly from these schemas using `z.infer<typeof Schema>` to ensure end-to-end type safety and zero type divergence.
 
 ---
 
-## 🌐 3. Data Fetching Resiliente (`apiClient`)
+## 🌐 3. Resilient Data Fetching (`apiClient`)
 
-Substituímos o Axios pelo **`ofetch`** por ser mais moderno, leve e oferecer interceptores assíncronos nativos. O `apiClient` está configurado para gerenciar timeouts, injeção dinâmica de JWT (do store Zustand) e deslogar o usuário em caso de erros de autorização (401).
+We replaced Axios with **`ofetch`** for being more modern, lightweight, and offering native async interceptors. The `apiClient` is configured to handle timeouts, dynamic JWT injection (from Zustand store), and automatic logout on authorization errors (401).
 
-### Código Real do `apiClient.ts`
-Implemente ou mantenha o cliente HTTP estruturado da seguinte forma no app frontend (`apps/web/src/services/apiClient.ts`):
+### Real `apiClient.ts` Code
+Implement or maintain the HTTP client structured as follows in the frontend app (`apps/web/src/services/apiClient.ts`):
 
 ```typescript
 import { ofetch } from 'ofetch';
-import { useAuthStore } from '@/store/auth-store'; // Zustand store de autenticação
+import { useAuthStore } from '@/store/auth-store'; // Zustand auth store
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4100';
 
 export const apiClient = ofetch.create({
   baseURL: API_BASE_URL,
-  timeout: 15000, // Timeout padrão de 15 segundos
+  timeout: 15000, // 15 second default timeout
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
   async onRequest({ options }) {
-    // Busca dinamicamente o JWT atual do Zustand store
+    // Dynamically fetch current JWT from Zustand store
     const token = useAuthStore.getState().token;
     if (token) {
       options.headers = {
@@ -92,9 +92,9 @@ export const apiClient = ofetch.create({
     }
   },
   async onResponseError({ response }) {
-    // Tratamento unificado de erros de autenticação (JWT expirado ou inválido)
+    // Unified authentication error handling (expired or invalid JWT)
     if (response.status === 401) {
-      console.warn('Sessão expirada (401). Efetuando logout automático...');
+      console.warn('Session expired (401). Logging out automatically...');
       useAuthStore.getState().logout();
       window.location.href = '/login';
     }
@@ -104,29 +104,29 @@ export const apiClient = ofetch.create({
 
 ---
 
-## 📱 4. Responsividade Avançada e Web Standards
+## 📱 4. Advanced Responsiveness and Web Standards
 
-### 🍎 Meta Viewport Obrigatório (iOS / Safari / macOS)
+### 🍎 Required Meta Viewport (iOS / Safari / macOS)
 
-Todo projeto AT5 **deve** incluir a seguinte meta tag no `index.html`. Sem ela, o Safari no iOS aplica zoom automático em inputs e o layout quebra em telas pequenas:
+Every AT5 project **must** include the following meta tag in `index.html`. Without it, Safari on iOS applies automatic zoom on inputs and the layout breaks on small screens:
 
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 ```
 
 > [!TIP]
-> O `maximum-scale=1` previne o zoom automático de inputs no iOS Safari (comportamento padrão quando o `font-size` do input é menor que 16px). Se o seu app precisa de zoom acessível, use `minimum-scale=1` sem o `maximum-scale`.
+> `maximum-scale=1` prevents automatic input zoom on iOS Safari (default behavior when input `font-size` is smaller than 16px). If your app needs accessible zoom, use `minimum-scale=1` without `maximum-scale`.
 
 ---
 
-A AT5 proíbe terminantemente o uso de tabelas HTML clássicas (`<table>`, `<tr>`, `<td>`) para layouts complexos ou listagens em dispositivos móveis, pois elas quebram a visualização e impedem a navegabilidade intuitiva.
+AT5 strictly prohibits the use of classic HTML tables (`<table>`, `<tr>`, `<td>`) for complex layouts or listings on mobile devices, as they break visualization and prevent intuitive navigation.
 
-### 📐 Grade Responsiva vs Tabelas
-Sempre prefira estruturas baseadas em **CSS Grid** e **Flexbox** com classes utilitárias do Tailwind v4 para adaptar listas e dados densos:
+### 📐 Responsive Grid vs Tables
+Always prefer structures based on **CSS Grid** and **Flexbox** with Tailwind v4 utility classes to adapt dense lists and data:
 
 ```tsx
-// ❌ NÃO FAZER: Tabelas rígidas que quebram no mobile
-// ✅ FAZER: Grid adaptativo e Mobile-First
+// ❌ DON'T: Rigid tables that break on mobile
+// ✅ DO: Adaptive Mobile-First Grid
 export function ResponsiveList({ items }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -144,23 +144,23 @@ export function ResponsiveList({ items }) {
 }
 ```
 
-### ♿ Acessibilidade (a11y) como Requisito de Engenharia
-Todos os componentes e telas devem ser totalmente acessíveis por padrão:
-- **ARIA**: Usar atributos `aria-*` apropriados para descrever estados interativos (ex: `aria-expanded`, `aria-invalid`, `aria-describedby`).
-- **Suporte a Teclado**: Garantir que todos os elementos interativos sejam focáveis (`tabIndex={0}`) e possam ser acionados via `Enter` ou `Space`.
-- **Foco Visível**: Nunca remova os estilos de foco sem fornecer uma alternativa clara. Use `focus-visible:ring-2 focus-visible:ring-blue-7`.
-- **Contraste de Cores**: Seguir as diretrizes do Radix Colors para garantir um contraste APCA adequado para leitura em qualquer tema (Light/Dark).
+### ♿ Accessibility (a11y) as an Engineering Requirement
+All components and screens must be fully accessible by default:
+- **ARIA**: Use appropriate `aria-*` attributes to describe interactive states (e.g., `aria-expanded`, `aria-invalid`, `aria-describedby`).
+- **Keyboard Support**: Ensure all interactive elements are focusable (`tabIndex={0}`) and can be triggered via `Enter` or `Space`.
+- **Visible Focus**: Never remove focus styles without providing a clear alternative. Use `focus-visible:ring-2 focus-visible:ring-blue-7`.
+- **Color Contrast**: Follow Radix Colors guidelines to ensure adequate APCA contrast for reading in any theme (Light/Dark).
 
 ---
 
-## 🎛️ 5. Invocação das Outras Skills Autônomas
+## 🎛️ 5. Invoking the Autonomous Sub-Skills
 
-Para implementar qualquer funcionalidade na AT5 com precisão milimétrica, o agente ou desenvolvedor **DEVE ativar e utilizar** as seguintes skills autônomas e independentes localizadas em **`~/.agents/skills/`** com base no escopo do trabalho:
+To implement any functionality in AT5 with precision, the agent or developer **MUST activate and use** the following autonomous and independent skills located in **`~/.agents/skills/`** based on the scope of work:
 
-1. 📂 **`at5-ui-components`**: Contém o catálogo completo de componentes React pré-estilizados e o código real de `/packages/ui` para criação rápida de interfaces acessíveis usando o **Slot Pattern** do Base UI (prop `render` ao invés de `asChild`).
-2. 📂 **`at5-nicemodal`**: Ensina a orquestrar formulários e diálogos complexos usando o helper robusto `createFormDialog` (com suporte a sidebar e abas em mobile) e `createAlertDialog` sem wrappers manuais.
-3. 📂 **`at5-radix-colors-tailwind`**: Guia para manipulação estrita de tokens de cores baseados em Radix Colors, OKLCH, temas automáticos e mapeamento exato de steps de 1 a 12 no `index.css`.
-4. 📂 **`at5-toasts`**: Configuração e disparo de notificações assíncronas síncronas e tratamento nativo de Promises com `toastManager` e `anchoredToastManager`.
+1. 📂 **`at5-ui-components`**: Contains the complete catalog of pre-styled React components and the real `/packages/ui` code for rapid creation of accessible interfaces using the Base UI **Slot Pattern** (`render` prop instead of `asChild`).
+2. 📂 **`at5-nicemodal`**: Teaches how to orchestrate complex forms and dialogs using the robust `createFormDialog` helper (with sidebar and mobile tab support) and `createAlertDialog` without manual wrappers.
+3. 📂 **`at5-radix-colors-tailwind`**: Guide for strict manipulation of color tokens based on Radix Colors, dark mode via `.dark` class, and exact step mapping from 1 to 12 in `index.css`.
+4. 📂 **`at5-toasts`**: Configuration and dispatch of async/sync notifications and native Promise handling with `toastManager` and `anchoredToastManager`.
 
 > [!TIP]
-> Caso precise construir componentes de UI ou gerenciar diálogos agora, chame imediatamente `~/.agents/skills/at5-ui-components/SKILL.md` ou `~/.agents/skills/at5-nicemodal/SKILL.md`.
+> If you need to build UI components or manage dialogs right now, immediately call `~/.agents/skills/at5-ui-components/SKILL.md` or `~/.agents/skills/at5-nicemodal/SKILL.md`.

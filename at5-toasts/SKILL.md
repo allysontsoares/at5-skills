@@ -3,29 +3,29 @@ name: at5-toasts
 description: Toast and notification system for AT5 projects using Base UI primitives. Use when implementing toasts, snackbars, success/error messages, loading indicators, async promise feedback, or contextually anchored alerts. Always trigger on keywords like toast, notification, toastManager, snackbar, loading state, success message, error message, promise feedback, AnchoredToastProvider, or Base UI toast.
 ---
 
-# at5-toasts — Gerenciamento de Notificações e Toasts com Base UI
+# at5-toasts — Notification and Toast Management with Base UI
 
-Esta skill autônoma documenta a arquitetura de **Gerenciamento de Notificações e Toasts** no ecossistema **AT5**, integrada com o motor headless **Base UI** (`@base-ui/react`). Ela apresenta o código real e completo para os providers de Toasts síncronos, assíncronos e ancorados (`ToastProvider`, `AnchoredToastProvider`), o gerenciador imperativo `toastManager` com suporte a Promises/loaders, e animações premium.
-
----
-
-## 🛠️ 1. A Filosofia das Notificações AT5
-
-O AT5 adota uma interface limpa, focada no usuário e com micro-animações fluidas. Os toasts do sistema evitam bibliotecas opinativas e pesadas, utilizando os primitivos acessíveis e headless do **Base UI**, estilizados com os tokens de cores do **Radix Colors** sob o **Tailwind v4.0**.
-
-### Princípios de UX de Notificações:
-1. **Não-obstrutivo**: Toasts normais aparecem nos cantos da tela e somem após `4000ms`.
-2. **Estados Transitórios Claros**: Suporte nativo a status de `loading`, transicionando suavemente para `success` ou `error` via Promises.
-3. **Ancoragem Contextual**: O `anchoredToastManager` permite disparar avisos contextuais colados a elementos de formulário ou botões específicos usando posicionamento por âncora (Anchor Positioning).
-4. **Sem JSX no Fluxo de Negócios**: O desenvolvedor dispara notificações de forma 100% imperativa a partir de ações, queries ou services.
+This autonomous skill documents the **Notification and Toast Management** architecture in the **AT5** ecosystem, integrated with the **Base UI** headless engine (`@base-ui/react`). It presents the complete real code for sync, async, and anchored toast providers (`ToastProvider`, `AnchoredToastProvider`), the imperative `toastManager` with Promise/loader support, and premium animations.
 
 ---
 
-## 🏗️ 2. Código da Infraestrutura Imperativa (`toast-store.ts`)
+## 🛠️ 1. AT5 Notification Philosophy
 
-Para permitir chamadas imperativas a partir de qualquer arquivo TypeScript do projeto (sem precisar de React Contexts locais), criamos um micro-store baseado em subscrição. 
+AT5 adopts a clean, user-focused interface with fluid micro-animations. System toasts avoid opinionated heavy libraries, using the accessible headless primitives from **Base UI**, styled with **Radix Colors** tokens under **Tailwind v4.0**.
 
-Crie este arquivo em `apps/web/src/components/ui/toast/toast-store.ts` (ou local equivalente):
+### Notification UX Principles:
+1. **Non-intrusive**: Normal toasts appear in screen corners and disappear after `4000ms`.
+2. **Clear Transient States**: Native support for `loading` status, smoothly transitioning to `success` or `error` via Promises.
+3. **Contextual Anchoring**: The `anchoredToastManager` allows dispatching contextual alerts anchored to specific form elements or buttons using CSS Anchor Positioning.
+4. **No JSX in Business Logic**: Developers dispatch notifications 100% imperatively from actions, queries, or services.
+
+---
+
+## 🏗️ 2. Imperative Infrastructure Code (`toast-store.ts`)
+
+To allow imperative calls from any TypeScript file in the project (without needing local React Contexts), we create a subscription-based micro-store.
+
+Create this file at `apps/web/src/components/ui/toast/toast-store.ts` (or equivalent):
 
 ```typescript
 export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -45,7 +45,6 @@ class ToastStore {
 
   subscribe(listener: ToastListener) {
     this.listeners.add(listener);
-    // Retorna a função de unsubscribe
     return () => {
       this.listeners.delete(listener);
     };
@@ -81,7 +80,7 @@ class ToastStore {
 export const toastStore = new ToastStore();
 
 /**
- * toastManager - API Imperativa Exposta para toda a aplicação
+ * toastManager - Imperative API exposed to the entire application
  */
 export const toastManager = {
   success: (msg: string, duration?: number) => toastStore.show(msg, 'success', duration),
@@ -90,8 +89,8 @@ export const toastManager = {
   info: (msg: string, duration?: number) => toastStore.show(msg, 'info', duration),
   loading: (msg: string) => toastStore.show(msg, 'loading', 999999),
   dismiss: (id: string) => toastStore.dismiss(id),
-  
-  // Resolve promises automaticamente alterando o estado do toast de Loading para Success ou Error
+
+  // Automatically resolves promises by transitioning the toast from Loading to Success or Error
   promise: <T>(
     promise: Promise<T>,
     messages: { loading: string; success: string; error: string },
@@ -101,7 +100,6 @@ export const toastManager = {
     return promise
       .then((res) => {
         toastStore.update(id, { message: messages.success, type: 'success', duration });
-        // Agenda remoção
         setTimeout(() => toastStore.dismiss(id), duration);
         return res;
       })
@@ -116,21 +114,21 @@ export const toastManager = {
 
 ---
 
-## 🏗️ 3. Código Real do Componente `ToastProvider`
+## 🏗️ 3. Real `ToastProvider` Component Code
 
-Este é o provider visual (`apps/web/src/components/ui/toast/toast-provider.tsx` ou equivalente local) que consome o store imperativo e renderiza os toasts utilizando os primitivos acessíveis do **Base UI**.
+This is the visual provider (`apps/web/src/components/ui/toast/toast-provider.tsx` or equivalent) that consumes the imperative store and renders toasts using the accessible **Base UI** primitives.
 
 ```tsx
 import { useEffect, useState } from 'react';
 import * as Toast from '@base-ui/react/toast';
 import { toastStore, type ToastData } from './toast-store';
-import { 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
+import {
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
   InfoCircle,
   Loading02,
-  XClose 
+  XClose,
 } from '@untitled-ui/icons-react';
 
 export function ToastProvider() {
@@ -144,7 +142,7 @@ export function ToastProvider() {
 
   return (
     <Toast.Provider swipeDirection="right">
-      {/* Container de exibição dos Toasts (canto inferior direito) */}
+      {/* Toast display container (bottom-right corner) */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
         {toasts.map((toast) => (
           <ToastRoot key={toast.id} toast={toast} />
@@ -176,9 +174,9 @@ function ToastRoot({ toast }: ToastRootProps) {
   };
 
   const bgClasses = {
-    success: 'bg-slate-2 border-success-6 text-slate-12',
-    error: 'bg-slate-2 border-error-6 text-slate-12',
-    warning: 'bg-slate-2 border-warning-6 text-slate-12',
+    success: 'bg-slate-2 border-green-6 text-slate-12',
+    error: 'bg-slate-2 border-red-6 text-slate-12',
+    warning: 'bg-slate-2 border-amber-6 text-slate-12',
     info: 'bg-slate-2 border-brand-6 text-slate-12',
     loading: 'bg-slate-2 border-slate-6 text-slate-12',
   };
@@ -191,7 +189,7 @@ function ToastRoot({ toast }: ToastRootProps) {
       className={`pointer-events-auto flex items-start gap-3 w-full p-4 rounded-lg border shadow-lg transition-all duration-300 transform animate-in slide-in-from-right-10 fade-in-20 ${bgClasses[type]}`}
     >
       <div className="shrink-0 mt-0.5">{icons[type]}</div>
-      
+
       <div className="flex-1 text-sm font-medium leading-tight">
         <Toast.Description>{message}</Toast.Description>
       </div>
@@ -208,14 +206,14 @@ function ToastRoot({ toast }: ToastRootProps) {
 
 ---
 
-## 🏗️ 4. Código Real do `AnchoredToastProvider` (Notificações Ancoradas)
+## 🏗️ 4. Real `AnchoredToastProvider` Code (Anchored Notifications)
 
-Diferente do toast flutuante tradicional, o toast ancorado é ideal para alertas persistentes focados em elementos de tela (como aviso de validação próximo a um botão ou input que falhou). O provider abaixo gerencia dinamicamente elementos virtuais ou âncoras reais.
+Unlike traditional floating toasts, anchored toasts are ideal for persistent alerts focused on screen elements (e.g., validation warning near a failed button or input). The provider below dynamically manages virtual or real anchors.
+
+Create the file at `apps/web/src/components/ui/toast/anchored-toast.tsx` or equivalent:
 
 > [!WARNING]
-> **Compatibilidade de Browser**: O `AnchoredToastProvider` usa a [CSS Anchor Positioning API](https://caniuse.com/css-anchor-positioning) (`anchor-name`, `position-anchor`). Suporte disponível apenas em **Chrome 125+ / Edge 125+**. Firefox e Safari ainda não suportam. Use como **progressive enhancement** — o toast ainda aparece, mas pode não se posicionar corretamente em browsers sem suporte.
-
-Crie o arquivo em `apps/web/src/components/ui/toast/anchored-toast.tsx` ou equivalente:
+> **Browser Compatibility**: The `AnchoredToastProvider` uses the [CSS Anchor Positioning API](https://caniuse.com/css-anchor-positioning) (`anchor-name`, `position-anchor`). Available only in **Chrome 125+ / Edge 125+**. Firefox and Safari do not yet support it. Use as **progressive enhancement** — the toast still appears, but may not position correctly on unsupported browsers.
 
 ```tsx
 import { type ReactNode, createContext, useContext, useState } from 'react';
@@ -252,8 +250,8 @@ export function AnchoredToastProvider({ children }: { children: ReactNode }) {
     <AnchoredToastContext.Provider value={{ showAnchored, hideAnchored }}>
       <Toast.Provider>
         {children}
-        
-        {/* Renderiza dinamicamente as portas ancoradas */}
+
+        {/* Dynamically renders anchored portals */}
         {Object.entries(activeToasts).map(([anchorId, { message }]) => (
           <Toast.Root
             key={anchorId}
@@ -263,7 +261,7 @@ export function AnchoredToastProvider({ children }: { children: ReactNode }) {
             // CSS Anchor Positioning — Chrome 125+ / Edge 125+
             style={{
               position: 'absolute',
-              // @ts-expect-error — propriedade CSS experimental ainda sem tipo no TS
+              // @ts-expect-error — experimental CSS property not yet typed in TS
               positionAnchor: `--${anchorId}`,
               top: 'anchor(bottom)',
               left: 'anchor(center)',
@@ -281,7 +279,7 @@ export function AnchoredToastProvider({ children }: { children: ReactNode }) {
 export function useAnchoredToast() {
   const context = useContext(AnchoredToastContext);
   if (!context) {
-    throw new Error('useAnchoredToast deve ser usado sob um AnchoredToastProvider');
+    throw new Error('useAnchoredToast must be used inside an AnchoredToastProvider');
   }
   return context;
 }
@@ -289,23 +287,23 @@ export function useAnchoredToast() {
 
 ---
 
-## 📝 5. Exemplos de Utilização Prática
+## 📝 5. Practical Usage Examples
 
-### 5.1 Toasts Simples Síncronos
+### 5.1 Simple Sync Toasts
 ```tsx
 import { toastManager } from '@/components/ui/toast/toast-store';
 
 function handleSaveSettings() {
   try {
-    // Executa ação...
-    toastManager.success('Configurações salvas com sucesso!');
+    // Execute action...
+    toastManager.success('Settings saved successfully!');
   } catch (error) {
-    toastManager.error('Falha ao salvar as configurações.');
+    toastManager.error('Failed to save settings.');
   }
 }
 ```
 
-### 5.2 Toasts Assíncronos Baseados em Promise (Loaders)
+### 5.2 Async Promise-Based Toasts (Loaders)
 ```tsx
 import { toastManager } from '@/components/ui/toast/toast-store';
 import { apiClient } from '@/lib/api-client';
@@ -313,17 +311,17 @@ import { apiClient } from '@/lib/api-client';
 async function handleImportBilling() {
   const importPromise = apiClient.post('/billing/import', { year: 2026 });
 
-  // Gerencia loading, sucesso e erro em uma única linha
+  // Manages loading, success and error in a single line
   await toastManager.promise(importPromise, {
-    loading: 'Processando arquivo de faturamento...',
-    success: 'Faturamento importado e processado com sucesso!',
-    error: 'Erro crítico ao processar o arquivo. Verifique os logs.',
+    loading: 'Processing billing file...',
+    success: 'Billing imported and processed successfully!',
+    error: 'Critical error processing the file. Check the logs.',
   });
 }
 ```
 
-### 5.3 Notificações Ancoradas
-Para que a ancoragem funcione, o botão ou input deve receber uma propriedade CSS `--anchor-name` customizada.
+### 5.3 Anchored Notifications
+For anchoring to work, the button or input must receive a custom CSS `anchor-name` property.
 
 ```tsx
 import { useAnchoredToast } from '@/components/ui/toast/anchored-toast';
@@ -332,8 +330,7 @@ export function ExportButton() {
   const { showAnchored } = useAnchoredToast();
 
   const handleExport = () => {
-    // Dispara exportação...
-    showAnchored('export-btn', 'Exportação iniciada em segundo plano!', 3000);
+    showAnchored('export-btn', 'Export started in the background!', 3000);
   };
 
   return (
@@ -341,11 +338,11 @@ export function ExportButton() {
       id="export-btn"
       onClick={handleExport}
       className="bg-brand-9 text-white px-4 py-2 rounded-md hover:bg-brand-10"
-      // Define a âncora para o CSS posicionar o toast ancorado — Chrome 125+
-      // @ts-expect-error — propriedade CSS experimental sem tipo no TS
+      // Defines the anchor for CSS to position the anchored toast — Chrome 125+
+      // @ts-expect-error — experimental CSS property
       style={{ anchorName: '--export-btn' }}
     >
-      Exportar Dados
+      Export Data
     </button>
   );
 }
@@ -353,9 +350,9 @@ export function ExportButton() {
 
 ---
 
-## ⚙️ 6. Como Validar e Auditar
+## ⚙️ 6. How to Validate and Audit
 
-Sempre que a IA ou o desenvolvedor fizerem alterações no sistema de Toasts, audite os seguintes itens:
-1. **Acessibilidade ARIA**: Certifique-se de que os toasts possuem papéis de acessibilidade corretos (usando primitivos `Toast.Root` e `Toast.Description` do Base UI).
-2. **Foco no Teclado**: Garanta que o aparecimento de um toast **não** roube o foco do teclado do usuário (propriedade `autoFocus={false}` ativa).
-3. **Comportamento Responsivo**: Verifique se o painel de Toasts se ajusta ao tamanho da tela e empilha corretamente em telas de dispositivos móveis.
+Whenever the AI or developer makes changes to the Toast system, audit the following:
+1. **ARIA Accessibility**: Ensure toasts have correct accessibility roles (using `Toast.Root` and `Toast.Description` primitives from Base UI).
+2. **Keyboard Focus**: Ensure toast appearance does **not** steal keyboard focus from the user (`autoFocus={false}` property active).
+3. **Responsive Behavior**: Verify the Toast panel adjusts to screen size and stacks correctly on mobile devices.

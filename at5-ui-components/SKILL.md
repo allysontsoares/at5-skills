@@ -3,62 +3,60 @@ name: at5-ui-components
 description: Complete AT5 design system component catalog built with Base UI + Tailwind CSS v4. Includes production-ready Button, Modal, Select, Input, Textarea, Card, Badge, Accordion, and FormField components with full dark mode support and accessibility. Use when creating, extending, or styling UI components. Always trigger on keywords like component, button, modal, select, input, card, badge, accordion, design system, UI components, Base UI, or render prop pattern.
 ---
 
-# at5-ui-components — Catálogo Completo de Componentes de Design System e Padrões Base UI
+# at5-ui-components — Complete Design System Component Catalog and Base UI Patterns
 
-Esta skill autônoma documenta as diretrizes do **Design System AT5**, fornecendo o **código real completo** dos componentes de `/packages/ui/src/components`. Isso capacita agentes de IA e desenvolvedores a recriarem, estenderem ou instanciar os componentes exatos do zero em qualquer novo projeto ou ambiente.
+This autonomous skill documents the **AT5 Design System** guidelines, providing the **complete real code** for components in `/packages/ui/src/components`. This enables AI agents and developers to recreate, extend, or instantiate the exact components from scratch in any new project or environment.
 
 ---
 
-## 🔑 1. Padrão de Composição: Slot Pattern (Prop `render` vs `asChild`)
+## 🔑 1. Composition Pattern: Slot Pattern (`render` prop vs `asChild`)
 
-A AT5 adota o **Base UI (`@base-ui/react`)** como biblioteca headless padrão. Diferente de outras bibliotecas como o Radix UI clássico, que usam a prop `asChild` para delegar a renderização para componentes filhos, o **Base UI utiliza o Slot Pattern baseado na prop `render`**.
+AT5 adopts **Base UI (`@base-ui/react`)** as the standard headless library. Unlike other libraries like classic Radix UI, which use the `asChild` prop to delegate rendering to child components, **Base UI uses the Slot Pattern based on the `render` prop**.
 
 > [!CRITICAL]
-> **REGRA DE OURO**: **Nunca** use a propriedade `asChild` em triggers, close triggers ou seletores ao construir componentes Base UI **voltados ao consumidor**. Use sempre a prop `render` passando a chamada do componente interno ou uma função de renderização.
+> **GOLDEN RULE**: **Never** use the `asChild` property on triggers, close triggers, or selectors when building Base UI components **for consumers**. Always use the `render` prop passing the inner component call or a render function.
 >
-> O componente `Button` do design system aceita `asChild` internamente como helper de compatibilidade, mas **não deve ser exposto ou incentivado para uso externo**. Prefira sempre `render={<button />}` ou `render={<a />}`.
+> The design system's `Button` component accepts `asChild` internally as a compatibility helper, but **should not be exposed or encouraged for external use**. Always prefer `render={<button />}` or `render={<a />}`.
 
-## 🎨 Nota sobre Escalas de Cores (`mauve` vs `slate`)
+## 🎨 Note on Color Scales (`mauve` vs `slate`)
 
-Os componentes deste catálogo usam duas escalas neutras:
-- **`mauve`**: Para elementos de formulário (inputs, selects, badges) — levemente arroxeado, ideal para neutralidade com temperatura.
-- **`slate`**: Para estrutura e containers (cards, modais, backgrounds) — levemente azulado, ideal para profundidade.
+Components in this catalog use two neutral scales:
+- **`mauve`**: For form elements (inputs, selects, badges) — slightly purple-tinted, ideal for temperature-neutral warmth.
+- **`slate`**: For structure and containers (cards, modals, backgrounds) — slightly blue-tinted, ideal for depth.
 
-Ambas as escalas estão mapeadas no `tailwind.config.js` via `@radix-ui/colors` e funcionam com dark mode automático pela classe `.dark`. **Não substitua `mauve` por `slate` nem vice-versa** — cada uma tem seu papel semântico no design system.
+Both scales are mapped in `tailwind.config.js` via `@radix-ui/colors` and work with automatic dark mode via the `.dark` class. **Do not replace `mauve` with `slate` or vice versa** — each has its semantic role in the design system.
 
-### Exemplo Incorreto (Radix Style):
+### Incorrect Example (Radix Style):
 ```tsx
-// ❌ NÃO FAZER!
+// ❌ DON'T!
 <DialogTrigger asChild>
-  <Button variant="solid">Abrir</Button>
+  <Button variant="solid">Open</Button>
 </DialogTrigger>
 ```
 
-### Exemplo Correto (Base UI Style):
+### Correct Example (Base UI Style):
 ```tsx
-// ✅ FAZER!
+// ✅ DO!
 <DialogTrigger render={<Button variant="solid" />}>
-  Abrir
+  Open
 </DialogTrigger>
 ```
 
 ---
 
-## 📦 2. Códigos de Implementação Reais Completos
+## 📦 2. Complete Real Implementation Code
 
-Aqui está o catálogo de componentes reais do diretório `/packages/ui/src/components`. Cada arquivo está pronto para ser dropado no repositório de qualquer projeto.
+Here is the component catalog from the `/packages/ui/src/components` directory. Each file is ready to be dropped into any project repository.
 
 ---
 
-### 📂 2.1 Componente `Button` (`/packages/ui/src/components/button.tsx`)
+### 📂 2.1 `Button` Component (`/packages/ui/src/components/button.tsx`)
 
-Um botão robusto baseado no `useRender` do Base UI e `tailwind-variants` para o gerenciamento dinâmico de dezenas de variantes estéticas, tamanhos e suporte completo a loading states.
+A robust button based on Base UI's `useRender` and `tailwind-variants` for dynamic management of dozens of aesthetic variants, sizes, and full loading state support.
 
 ```tsx
-'use client';
-
 import { mergeProps, useRender } from '@base-ui/react';
-import { cn } from '@manager/lib'; // Utilitário de classes cn
+import { cn } from '@manager/lib';
 import * as React from 'react';
 import { forwardRef } from 'react';
 import { type VariantProps, tv } from 'tailwind-variants';
@@ -162,15 +160,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const defaultProps = {
       className: cn(
-        buttonStyles({
-          variant,
-          accent,
-          size,
-          radius,
-          mode,
-          appearance,
-          isLoading,
-        }),
+        buttonStyles({ variant, accent, size, radius, mode, appearance, isLoading }),
         className,
       ),
     };
@@ -207,13 +197,11 @@ Button.displayName = 'Button';
 
 ---
 
-### 📂 2.2 Componente `Modal` (`/packages/ui/src/components/modal.tsx`)
+### 📂 2.2 `Modal` Component (`/packages/ui/src/components/modal.tsx`)
 
-Mecanismo completo de diálogos compound, com suporte a **Pointer Draggable** no desktop e tamanhos customizados (`xs` a `5xl` para acomodar painéis de formulários com sidebars).
+Complete compound dialog mechanism with **Pointer Draggable** support on desktop and custom sizes (`xs` to `5xl` to accommodate form panels with sidebars).
 
 ```tsx
-'use client';
-
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { cn } from '@manager/lib';
 import { XClose } from '@untitled-ui/icons-react';
@@ -350,14 +338,8 @@ function useDraggable(enabled: boolean) {
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
     if (target?.closest(DRAG_IGNORE_SELECTOR)) return;
-
     event.preventDefault();
-    dragStateRef.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      baseX: offset.x,
-      baseY: offset.y,
-    };
+    dragStateRef.current = { startX: event.clientX, startY: event.clientY, baseX: offset.x, baseY: offset.y };
     setIsDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   }, [enabled, offset]);
@@ -365,10 +347,7 @@ function useDraggable(enabled: boolean) {
   const onPointerMove = useCallback((event: ReactPointerEvent<HTMLElement>) => {
     const state = dragStateRef.current;
     if (!state) return;
-    setOffset({
-      x: state.baseX + (event.clientX - state.startX),
-      y: state.baseY + (event.clientY - state.startY),
-    });
+    setOffset({ x: state.baseX + (event.clientX - state.startX), y: state.baseY + (event.clientY - state.startY) });
   }, []);
 
   const finishDrag = useCallback((event: ReactPointerEvent<HTMLElement>) => {
@@ -412,9 +391,7 @@ function ModalBackdrop({ children, className, variant = 'opaque', isDismissable 
   const open = isOpenProp ?? rootContext.open;
   const actionsRef = useRef<DialogPrimitive.Root.Actions | null>(null);
   const slots = useMemo(() => modalVariants({ backdropVariant: variant }), [variant]);
-
   const close = useCallback(() => { actionsRef.current?.close(); }, []);
-
   const handleOpenChange = useCallback((nextOpen: boolean, eventDetails: any) => {
     if (!nextOpen && !isDismissable && eventDetails.reason === 'outside-press') return;
     if (!nextOpen && isKeyboardDismissDisabled && eventDetails.reason === 'escape-key') return;
@@ -437,7 +414,6 @@ function ModalContainer({ children, className, placement = 'auto', scroll = 'ins
   const slots = useMemo(() => modalVariants({ placement, scroll, size, tone }), [placement, scroll, size, tone]);
   const drag = useDraggable(draggable);
   const contextValue = useMemo(() => ({ placement, scroll, slots, tone, drag }), [placement, scroll, slots, tone, drag]);
-
   return (
     <ModalContext.Provider value={contextValue}>
       <DialogPrimitive.Viewport className={cn(slots.container(), className)} {...props}>
@@ -450,11 +426,9 @@ function ModalContainer({ children, className, placement = 'auto', scroll = 'ins
 function ModalDialog({ children, className, style, ...props }: any) {
   const { close } = useContext(ModalRuntimeContext);
   const { placement, slots, drag } = useContext(ModalContext);
-
   const dragStyle: CSSProperties = drag.enabled && (drag.offset.x !== 0 || drag.offset.y !== 0 || drag.isDragging)
     ? { transform: `translate3d(${drag.offset.x}px, ${drag.offset.y}px, 0)`, transition: drag.isDragging ? 'none' : undefined, willChange: 'transform' }
     : {};
-
   return (
     <DialogPrimitive.Popup style={{ ...dragStyle, ...style }} className={cn(slots.dialog(), className)} {...props}>
       {typeof children === 'function' ? children({ close }) : children}
@@ -495,7 +469,7 @@ function ModalCloseTrigger({ className, children, ...props }: any) {
   const { slots } = useContext(ModalContext);
   return (
     <DialogPrimitive.Close className={cn(slots.closeTrigger(), className)} {...props}>
-      {children ?? <><XClose className="size-4" /><span className="sr-only">Fechar</span></>}
+      {children ?? <><XClose className="size-4" /><span className="sr-only">Close</span></>}
     </DialogPrimitive.Close>
   );
 }
@@ -524,14 +498,12 @@ export const Modal = Object.assign(ModalRoot, {
 
 ---
 
-### 📂 2.3 Componente `Select` (`/packages/ui/src/components/select.tsx`)
-
-Implementação altamente customizável baseada em `@base-ui/react/select` que suporta posicionamento inteligente dos itens, indicador de item ativo na esquerda ou direita e suporte a botão "Limpar Seleção".
+### 📂 2.3 `Select` Component (`/packages/ui/src/components/select.tsx`)
 
 ```tsx
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { cn } from '@manager/lib';
-import { Check, ChevronDown, ChevronUp, X } from '@untitled-ui/icons-react';
+import { Check, ChevronDown, X } from '@untitled-ui/icons-react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 import { type ReactNode, isValidElement } from 'react';
@@ -575,9 +547,7 @@ export function SelectPositioner({ className, ...props }: React.ComponentProps<t
 }
 
 export function SelectValue({ placeholder, ...props }: any) {
-  if (!placeholder) {
-    return <SelectPrimitive.Value data-slot="select-value" {...props} />;
-  }
+  if (!placeholder) return <SelectPrimitive.Value data-slot="select-value" {...props} />;
   return (
     <SelectPrimitive.Value
       render={(_, { value }) => {
@@ -660,9 +630,7 @@ export function SelectItem({ className, children, ...props }: any) {
 
 ---
 
-### 📂 2.4 Componente `Accordion` (`/packages/ui/src/components/accordion.tsx`)
-
-Animações de entrada e saída automáticas para altura de blocos utilizando o motor CSS do Tailwind e Base UI.
+### 📂 2.4 `Accordion` Component (`/packages/ui/src/components/accordion.tsx`)
 
 ```tsx
 import { Accordion as AccordionPrimitive } from '@base-ui/react/accordion';
@@ -702,7 +670,7 @@ export function AccordionContent({ className, children, ...props }: AccordionPri
 
 ---
 
-### 📂 2.5 Componente `Input` (`/packages/ui/src/components/input.tsx`)
+### 📂 2.5 `Input` Component (`/packages/ui/src/components/input.tsx`)
 
 ```tsx
 import { Input as InputPrimitive } from '@base-ui/react/input';
@@ -729,7 +697,7 @@ export function Input({ className, type, ...props }: React.ComponentProps<'input
 
 ---
 
-### 📂 2.6 Componente `Textarea` (`/packages/ui/src/components/textarea.tsx`)
+### 📂 2.6 `Textarea` Component (`/packages/ui/src/components/textarea.tsx`)
 
 ```tsx
 import { cn } from '@manager/lib';
@@ -750,16 +718,14 @@ export function Textarea({ className, ...props }: React.ComponentProps<'textarea
 
 ---
 
-### 📂 2.7 Componente `Card` (`/packages/ui/src/components/card.tsx`)
+### 📂 2.7 `Card` Component (`/packages/ui/src/components/card.tsx`)
 
 ```tsx
 import { cn } from '@manager/lib';
 import type * as React from 'react';
 
 export function Card({ className, size = 'default', ...props }: React.ComponentProps<'div'> & { size?: 'default' | 'sm' }) {
-  return (
-    <div data-slot="card" data-size={size} className={cn('bg-slate-3 text-slate-12 gap-6 overflow-hidden rounded-xl border border-slate-6 p-6 text-sm shadow-sm flex flex-col', className)} {...props} />
-  );
+  return <div data-slot="card" data-size={size} className={cn('bg-slate-3 text-slate-12 gap-6 overflow-hidden rounded-xl border border-slate-6 p-6 text-sm shadow-sm flex flex-col', className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
@@ -785,7 +751,7 @@ export function CardFooter({ className, ...props }: React.ComponentProps<'div'>)
 
 ---
 
-### 📂 2.8 Componente `Badge` (`/packages/ui/src/components/badge.tsx`)
+### 📂 2.8 `Badge` Component (`/packages/ui/src/components/badge.tsx`)
 
 ```tsx
 import { mergeProps } from '@base-ui/react/merge-props';
@@ -828,11 +794,9 @@ export function Badge({ className, variant = 'default', radii = 'full', render, 
 
 ---
 
----
+### 📂 2.9 `FormField` Component (Standard for `react-hook-form`)
 
-### 📂 2.9 Componente `FormField` (Padrão para `react-hook-form`)
-
-Wrapper que unifica label + input + mensagem de erro, eliminando a repetição em todos os formulários:
+Wrapper that unifies label + input + error message, eliminating repetition across all forms:
 
 ```tsx
 import { cn } from '@manager/lib';
@@ -864,25 +828,25 @@ export function FormField({ label, error, required, children, className }: FormF
 }
 ```
 
-Uso com `react-hook-form`:
+Usage with `react-hook-form`:
 ```tsx
-<FormField label="Nome" error={errors.name?.message} required>
+<FormField label="Name" error={errors.name?.message} required>
   <Input {...register('name')} aria-invalid={!!errors.name} />
 </FormField>
 ```
 
 ---
 
-## ⚠️ Notas Técnicas Importantes
+## ⚠️ Important Technical Notes
 
-### Tipos `any` no componente `Modal`
-Os sub-componentes do `Modal` (ex: `ModalBackdrop`, `ModalContainer`, `ModalDialog`) usam `any` internamente para simplificar a composição. Em projetos que exigem TypeScript estrito (`strict: true`), substitua os `any` pelos tipos derivados dos primitivos do Base UI (`Dialog.Root.Props`, `Dialog.Popup.Props`, etc.) ao estender esses componentes.
+### `any` types in the `Modal` component
+The `Modal` sub-components (e.g., `ModalBackdrop`, `ModalContainer`, `ModalDialog`) use `any` internally to simplify composition. In projects requiring strict TypeScript (`strict: true`), replace the `any` types with derived types from Base UI primitives (`Dialog.Root.Props`, `Dialog.Popup.Props`, etc.) when extending these components.
 
-### `asChild` no `Button`
-O `Button` aceita a prop `asChild` para compatibilidade interna com casos de edge (ex: `<Button asChild><Link /></Button>`). Para consumo normal, prefira sempre `render={<a />}` ou `render={<RouterLink />}`, que é o padrão do Base UI e não ativa o caminho de código do `asChild`.
+### `asChild` in `Button`
+The `Button` accepts the `asChild` prop for internal edge-case compatibility (e.g., `<Button asChild><Link /></Button>`). For normal consumption, always prefer `render={<a />}` or `render={<RouterLink />}`, which is the Base UI standard and does not activate the `asChild` code path.
 
 ---
 
-## 🛠️ 3. Instalação e uso em novos projetos
+## 🛠️ 3. Installation and Usage in New Projects
 
-Ao criar uma nova interface AT5, sempre inicie importando os componentes exportados de `@manager/ui`. A IA ou o desenvolvedor devem priorizar o reaproveitamento destes componentes para manter a conformidade do design system, acessibilidade garantida e evitar bundle size redundante com bibliotecas externas de terceiros.
+When creating a new AT5 interface, always start by importing the components exported from `@manager/ui`. AI agents and developers should prioritize reusing these components to maintain design system conformance, guaranteed accessibility, and avoid redundant bundle size from third-party libraries.

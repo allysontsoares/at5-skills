@@ -5,17 +5,17 @@ A collection of agent skills documenting the **AT5 frontend architecture** — a
 ## Install
 
 ```bash
-npx skills add allysonsoares/at5-skills
+npx skills add allysontsoares/at5-skills
 ```
 
 Or install individual skills:
 
 ```bash
-npx skills add allysonsoares/at5-skills/at5-frontend-stack
-npx skills add allysonsoares/at5-skills/at5-ui-components
-npx skills add allysonsoares/at5-skills/at5-nicemodal
-npx skills add allysonsoares/at5-skills/at5-toasts
-npx skills add allysonsoares/at5-skills/at5-radix-colors-tailwind
+npx skills add allysontsoares/at5-skills/at5-frontend-stack
+npx skills add allysontsoares/at5-skills/at5-ui-components
+npx skills add allysontsoares/at5-skills/at5-nicemodal
+npx skills add allysontsoares/at5-skills/at5-toasts
+npx skills add allysontsoares/at5-skills/at5-radix-colors-tailwind
 ```
 
 ## Skills
