@@ -1,14 +1,14 @@
 ---
-name: wetrakr-api
+name: at5-wetrakr-api
 description: >
   Reference for the WeTrakr public REST API at api.wetrakr.com: OAuth and PKCE,
   headers, sync and journal, scrobble, tracking, ratings, lists, comments,
   catalog, discover, and rate limits. Use when integrating, calling, debugging,
   or designing against WeTrakr, or when the user says WeTrakr API, api.wetrakr.com,
-  wetrakr sync, scrobble, watch history import, or /wetrakr-api.
+  wetrakr sync, scrobble, watch history import, or /at5-wetrakr-api.
 ---
 
-# WeTrakr API
+# at5-wetrakr-api
 
 Consult this skill before calling `https://api.wetrakr.com`, designing a client, or answering how a WeTrakr route behaves. Do not invent paths, query names, status values, or body fields. Open the reference that owns the area, then follow it.
 
