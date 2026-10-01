@@ -16,6 +16,7 @@ npx skills add allysontsoares/at5-skills/at5-ui-components
 npx skills add allysontsoares/at5-skills/at5-nicemodal
 npx skills add allysontsoares/at5-skills/at5-toasts
 npx skills add allysontsoares/at5-skills/at5-radix-colors-tailwind
+npx skills add allysontsoares/at5-skills/wetrakr-api
 ```
 
 ## Skills
@@ -34,6 +35,9 @@ Imperative toast notification system built on Base UI primitives. Supports sync,
 
 ### [`at5-radix-colors-tailwind`](./at5-radix-colors-tailwind/SKILL.md)
 Design token architecture integrating `@radix-ui/colors` with Tailwind CSS v4 `@theme`. Covers the 12-step color scale semantics, brand color customization, `.dark` class-based dark mode, and `tailwind.config.js` mapping.
+
+### [`wetrakr-api`](./wetrakr-api/SKILL.md)
+Reference for the WeTrakr public REST API at `api.wetrakr.com`: OAuth and PKCE, sync and journal, scrobble, tracking, lists, comments, catalog, and rate limits. Snapshot of the public docs on 2026-10-01, changelog 1.0.7. The same skill is also published on its own at [allysontsoares/wetrakr-api](https://github.com/allysontsoares/wetrakr-api). It documents that API, separate from the frontend stack above.
 
 ## Stack
 
